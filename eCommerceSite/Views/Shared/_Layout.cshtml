@@ -1,4 +1,28 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.EntityFrameworkCore
+@inject IHttpContextAccessor sessionData
+@inject eCommerceSite.Data.ProductContext db
+@{ 
+    int? userId = sessionData.HttpContext.Session.GetInt32("UserId");
+    string username = null;
+    if (userId.HasValue)
+    {
+        string userNameFromSession = sessionData.HttpContext.Session.GetString("username");
+        if (userNameFromSession == null)
+        {
+            username = await(from u in db.UserAccounts
+                             where u.UserId == userId
+                             select u.Username).SingleOrDefaultAsync();
+
+            sessionData.HttpContext.Session.SetString("Username", username);
+        }
+        else
+        {
+            username = userNameFromSession;
+        }
+    }
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -27,9 +51,21 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="Product" asp-action="Index">Catalog</a>
                         </li>
-                        <li class="nav-item">
+                        @if(userId == null) // If user not logged in
+                        { 
+                            <li class="nav-item">
                             <a class="nav-link text-dark" asp-controller="User" asp-action="Register">Register</a>
                         </li>
+                            <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="User" asp-action="Login">Log In</a>
+                        </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark disabled">Welcome back @username!</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
